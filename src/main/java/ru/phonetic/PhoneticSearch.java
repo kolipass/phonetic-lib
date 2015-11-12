@@ -31,6 +31,7 @@ public class PhoneticSearch {
         encoders.put("Soundex", new TranslitEncoder(new AlgorithmEncoder(new Soundex())));
         encoders.put("Refined Soundex", new TranslitEncoder(new AlgorithmEncoder(new RefinedSoundex())));
         encoders.put("NYSIIS", new TranslitEncoder(new AlgorithmEncoder(new Nysiis())));
+        encoders.put("NYSIIS apache", new TranslitEncoder(new AlgorithmEncoder(new org.apache.commons.codec.language.Nysiis())));
         encoders.put("Daitch-Mokotoff Soundex", new TranslitEncoder(new AlgorithmEncoder(new DMSoundexWrap())));
         encoders.put("Metaphone", new TranslitEncoder(new AlgorithmEncoder(new Metaphone())));
         encoders.put("Double Metaphone", new TranslitEncoder(new AlgorithmEncoder(new DoubleMetaphoneWrap())));
