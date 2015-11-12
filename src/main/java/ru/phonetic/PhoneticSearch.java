@@ -36,7 +36,7 @@ public class PhoneticSearch {
         encoders.put("Metaphone", new TranslitEncoder(new AlgorithmEncoder(new Metaphone())));
         encoders.put("Double Metaphone", new TranslitEncoder(new AlgorithmEncoder(new DoubleMetaphoneWrap())));
         encoders.put("Russian Metaphone", new AlgorithmEncoder(new MetaphoneRussian()));
-        encoders.put("Caverphone", new TranslitEncoder(new AlgorithmEncoder(new Caverphone2())));
+        encoders.put("Caverphone2", new TranslitEncoder(new AlgorithmEncoder(new Caverphone2())));
 
         String[] dictionary = loadDictionary("dictionary.txt");
 
@@ -71,7 +71,11 @@ public class PhoneticSearch {
                     writer.print(value);
                 }
                 writer.println();
+
+                writer.flush();
             }
+
+            writer.close();
         }
     }
 
