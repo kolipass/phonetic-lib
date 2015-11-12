@@ -16,6 +16,12 @@ Also the project used Apache Commons Codec:
 
 Usage
 ====================
+Create dictionary.txt (or get it here [252 russian surnames](https://gist.github.com/kolipass/523ea952c52986538d45) ) and run MetaphoneRussian.main(null);
+
+
+
+Usage in custom project
+====================
  * Normal usage (not work in current moment)
  
 Add it to your root build.gradle with:
