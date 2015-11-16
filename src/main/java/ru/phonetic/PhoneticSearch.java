@@ -26,8 +26,7 @@ import java.util.TreeMap;
 public class PhoneticSearch {
 
     public static void main(String[] args) throws IOException, EncoderException {
-        Map<String, Encoder> encoders = new LinkedHashMap<String, Encoder>();
-
+        Map<String, Encoder> encoders = new LinkedHashMap<>();
         encoders.put("Soundex", new TranslitEncoder(new AlgorithmEncoder(new Soundex())));
         encoders.put("Refined Soundex", new TranslitEncoder(new AlgorithmEncoder(new RefinedSoundex())));
         encoders.put("NYSIIS", new TranslitEncoder(new AlgorithmEncoder(new Nysiis())));
@@ -45,7 +44,7 @@ public class PhoneticSearch {
 
             Encoder encoder = entry.getValue();
 
-            Map<String, List<String>> stringMap = new TreeMap<String, List<String>>();
+            Map<String, List<String>> stringMap = new TreeMap<>();
 
             for (String word : dictionary) {
                 String[] keys = encoder.encode(word);
@@ -54,7 +53,7 @@ public class PhoneticSearch {
                     key = key.toUpperCase();
                     List<String> stringList = stringMap.get(key);
                     if (stringList == null) {
-                        stringList = new ArrayList<String>();
+                        stringList = new ArrayList<>();
                         stringMap.put(key, stringList);
                     }
                     stringList.add(word);
@@ -80,7 +79,7 @@ public class PhoneticSearch {
     }
 
     public static String[] loadDictionary(String filename) throws IOException {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
 
         BufferedReader reader = new BufferedReader(new FileReader(filename));
         String line;
@@ -91,12 +90,12 @@ public class PhoneticSearch {
         return lines.toArray(new String[lines.size()]);
     }
 
-    public static interface Encoder {
+    public interface Encoder {
 
         String[] encode(String word) throws EncoderException;
     }
 
-    public static interface StringMultiEncoder extends StringEncoder {
+    public interface StringMultiEncoder extends StringEncoder {
 
         String[] encodeMultiple(String pString) throws EncoderException;
     }
