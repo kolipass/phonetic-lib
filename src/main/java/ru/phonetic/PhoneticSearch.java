@@ -13,6 +13,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,21 +27,12 @@ import java.util.TreeMap;
 public class PhoneticSearch {
 
     public static void main(String[] args) throws IOException, EncoderException {
-        Map<String, Encoder> encoders = new LinkedHashMap<>();
-        encoders.put("Soundex", new TranslitEncoder(new AlgorithmEncoder(new Soundex())));
-        encoders.put("Refined Soundex", new TranslitEncoder(new AlgorithmEncoder(new RefinedSoundex())));
-        encoders.put("NYSIIS", new TranslitEncoder(new AlgorithmEncoder(new Nysiis())));
-        encoders.put("NYSIIS apache", new TranslitEncoder(new AlgorithmEncoder(new org.apache.commons.codec.language.Nysiis())));
-        encoders.put("Daitch-Mokotoff Soundex", new TranslitEncoder(new AlgorithmEncoder(new DMSoundexWrap())));
-        encoders.put("Metaphone", new TranslitEncoder(new AlgorithmEncoder(new Metaphone())));
-        encoders.put("Double Metaphone", new TranslitEncoder(new AlgorithmEncoder(new DoubleMetaphoneWrap())));
-        encoders.put("Russian Metaphone", new AlgorithmEncoder(new MetaphoneRussian()));
-        encoders.put("Caverphone2", new TranslitEncoder(new AlgorithmEncoder(new Caverphone2())));
+        Map<String, Encoder> encoders = getStringEncoderMap();
 
         String[] dictionary = loadDictionary("dictionary.txt");
 
         for (Map.Entry<String, Encoder> entry : encoders.entrySet()) {
-            PrintWriter writer = new PrintWriter(entry.getKey() + " Stat.txt");
+            PrintWriter writer = new PrintWriter(System.out);
 
             Encoder encoder = entry.getValue();
 
@@ -76,6 +68,27 @@ public class PhoneticSearch {
 
             writer.close();
         }
+    }
+
+    public static Map<String, Encoder> getStringEncoderMap() {
+        return new LinkedHashMap<String, Encoder>() {{
+            put("Soundex", new TranslitEncoder(new AlgorithmEncoder(new Soundex())));
+            put("Soundex split by space", new TranslitEncoder(new SplitStringEncoder(new Soundex())));
+            put("Refined Soundex", new TranslitEncoder(new AlgorithmEncoder(new RefinedSoundex())));
+            put("NYSIIS", new TranslitEncoder(new AlgorithmEncoder(new Nysiis())));
+            put("NYSIIS apache", new TranslitEncoder(new AlgorithmEncoder(new org.apache.commons.codec.language.Nysiis())));
+            put("NYSIIS apache   split by space", new TranslitEncoder(new SplitStringEncoder(new org.apache.commons.codec.language.Nysiis())));
+//            put("Daitch-Mokotoff Soundex Multiple", new TranslitEncoder(new AlgorithmEncoder(new DMSoundexWrap())));
+            put("Daitch-Mokotoff Soundex", new TranslitEncoder(new SplitStringEncoder(new DMSoundexWrap())));
+            put("Metaphone", new TranslitEncoder(new AlgorithmEncoder(new Metaphone())));
+            put("Metaphone   split by space", new TranslitEncoder(new SplitStringEncoder(new Metaphone())));
+//            put("Double Metaphone Multiple", new TranslitEncoder(new AlgorithmEncoder(new DoubleMetaphoneWrap())));
+            put("Double Metaphone", new TranslitEncoder(new AlgorithmEncoder(new DoubleMetaphone())));
+            put("Double Metaphone  split by space", new TranslitEncoder(new SplitStringEncoder(new DoubleMetaphone())));
+            put("Russian Metaphone", new AlgorithmEncoder(new MetaphoneRussian()));
+            put("Caverphone2", new TranslitEncoder(new AlgorithmEncoder(new Caverphone2())));
+            put("Caverphone2 split by space", new TranslitEncoder(new SplitStringEncoder(new Caverphone2())));
+        }};
     }
 
     public static String[] loadDictionary(String filename) throws IOException {
@@ -115,6 +128,29 @@ public class PhoneticSearch {
         }
     }
 
+    public static class SplitStringEncoder extends AlgorithmEncoder {
+
+        public SplitStringEncoder(StringEncoder encoder) {
+            super(encoder);
+        }
+
+        public String[] encode(String inputString) throws EncoderException {
+            String space = " ";
+            if (inputString.lastIndexOf(space) > -1) {
+                List<String> result = new ArrayList<>();
+
+                for (String word : inputString.split("[\\p{Punct},\\s]")) {
+                    result.add(Arrays.toString(super.encode(word)));
+                }
+
+                return result.toArray(new String[result.size()]);
+
+            } else {
+                return super.encode(inputString);
+            }
+        }
+    }
+
     public static class TranslitEncoder implements Encoder {
 
         private final Encoder encoder;
@@ -128,7 +164,27 @@ public class PhoneticSearch {
         }
     }
 
-    public static class DMSoundexWrap implements StringMultiEncoder {
+    public static class DMSoundexMultiWrap implements StringMultiEncoder {
+
+        private final DMSoundex encoder;
+
+        public DMSoundexMultiWrap() {
+            encoder = new DMSoundex();
+        }
+
+        public String encode(String pString) throws EncoderException {
+            return encoder.sencode(pString.toLowerCase());
+        }
+
+        public Object encode(Object pObject) throws EncoderException {
+            return encode(pObject.toString());
+        }
+
+        public String[] encodeMultiple(String pString) throws EncoderException {
+            return encoder.soundexes(pString.toLowerCase());
+        }
+    }
+    public static class DMSoundexWrap implements StringEncoder {
 
         private final DMSoundex encoder;
 
@@ -144,9 +200,6 @@ public class PhoneticSearch {
             return encode(pObject.toString());
         }
 
-        public String[] encodeMultiple(String pString) throws EncoderException {
-            return encoder.soundexes(pString.toLowerCase());
-        }
     }
 
     public static class DoubleMetaphoneWrap implements StringMultiEncoder {

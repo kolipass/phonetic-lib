@@ -1,5 +1,8 @@
 package ru.phonetic;
 
+import org.apache.commons.codec.EncoderException;
+import org.apache.commons.codec.StringEncoder;
+
 /**
  * Класс переводит русский текст в транслит. Например, строка "Текст" будет преобразована в "Tekst".
  * User: Deady
@@ -7,7 +10,7 @@ package ru.phonetic;
  * 04.12.2007
  * Time: 15:56:47
  */
-public class Translit {
+public class Translit implements StringEncoder {
 
     private static final String[] charTable = new String[81];
 
@@ -66,5 +69,18 @@ public class Translit {
             } else sb.append(symbol);
         }
         return sb.toString();
+    }
+
+    @Override
+    public String encode(String source) throws EncoderException {
+        return toTranslit(source);
+    }
+
+    @Override
+    public Object encode(Object source) throws EncoderException {
+        if (!(source instanceof String)) {
+            throw new EncoderException("Parameter supplied to Soundex encode is not of type java.lang.String");
+        }
+        return encode((String) source);
     }
 }

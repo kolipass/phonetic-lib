@@ -17,6 +17,9 @@ package ru.phonetic;
  * Joshua Levy. Email is joshualevy@yahoo.com Phone is 408-245-5292 Address is 1433 Hawk Ct., Sunnyvale, CA, 94087, USA
  */
 
+import org.apache.commons.codec.EncoderException;
+import org.apache.commons.codec.StringEncoder;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +49,7 @@ import java.util.Map;
  * @version 0.1 (First Beta Release)
  */
 
-public class DMSoundex {
+public class DMSoundex  implements StringEncoder {
 
 	public boolean debug = false;
 
@@ -55,6 +58,19 @@ public class DMSoundex {
 
 	static public String getVersion() {
 		return "0.1 - first beta release";
+	}
+
+	@Override
+	public String encode(String source) throws EncoderException {
+		return soundex(source);
+	}
+
+	@Override
+	public Object encode(Object source) throws EncoderException {
+		if (!(source instanceof String)) {
+			throw new EncoderException("Parameter supplied to Soundex encode is not of type java.lang.String");
+		}
+		return soundex((String) source);
 	}
 
 	private class Entry {
