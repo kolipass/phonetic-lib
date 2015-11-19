@@ -1,6 +1,11 @@
 package ru.phonetic;
 
 import org.apache.commons.codec.EncoderException;
+import org.apache.commons.codec.language.Caverphone2;
+import org.apache.commons.codec.language.DoubleMetaphone;
+import org.apache.commons.codec.language.Metaphone;
+import org.apache.commons.codec.language.RefinedSoundex;
+import org.apache.commons.codec.language.Soundex;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -12,7 +17,14 @@ import java.util.List;
 import java.util.Map;
 
 import ru.phonetic.compareUtils.DiffMeter;
+import ru.phonetic.compareUtils.JaroWinklerDistanceDiffMetr;
+import ru.phonetic.compareUtils.LevenshteinDistanceDiffMetr;
 import ru.phonetic.compareUtils.Preparator;
+
+import static ru.phonetic.PhoneticSearch.AlgorithmEncoder;
+import static ru.phonetic.PhoneticSearch.Encoder;
+import static ru.phonetic.PhoneticSearch.SplitStringEncoder;
+import static ru.phonetic.PhoneticSearch.TranslitEncoder;
 
 /**
  * Created by kolipass on 16.11.15.
@@ -23,7 +35,7 @@ public class PhoneticCompare {
 
     public static void main(String[] args) throws IOException, EncoderException {
         String comparable = "волиция также сообщения";
-        String baseString = "В полиции также сообщили, что собака была найдена полицейскими ";
+        String baseString = "В полиции также сообщили, что собака была найдена полицейскими 555";
 
         Map<String, String> baseStringSet = getPreparatedStringMap(baseString,
                 new ArrayList<Preparator>() {{
@@ -31,13 +43,16 @@ public class PhoneticCompare {
                     add(target -> target.toString().toLowerCase());
                     //заменить всю пунктуацияю на пробелы, избегая ситуации, когда слова разделяет знак пунктуации: "не синий,а черный"
                     add(target -> target.toString().replaceAll("[\\p{Punct},\\s]", " "));
+                    //пока не решен вопрос с цыфрами
+                    add(target -> target.toString().replaceAll("\\d+", " "));
                     //заменить все повторяющиеся пробелы на одинарный
                     add(target -> target.toString().replaceAll("\\s{2,}", " "));
+                    add(target -> target.toString().trim());
                 }},
                 getPreparedFactory(baseString, comparable));
 
         Map<String, DiffMeter> diffMeterMap = diffMeterFactory();
-        Map<String, PhoneticSearch.Encoder> encoderMap = PhoneticSearch.getStringEncoderMap();
+        Map<String, PhoneticSearch.Encoder> encoderMap = getStringEncoderMap();
 
         PrintWriter writer = new PrintWriter("Stat.CSV");
 //        PrintWriter writer = new PrintWriter(System.out);
@@ -55,7 +70,7 @@ public class PhoneticCompare {
      * @param preparedFactory вариативные Preparator. Ключ - это тег для лога каждому препоратору. Работа каждого из них добавится отдельным пунктом
      * @return Map, который содержит ключ от preparedFactory и преобразованную строку.
      */
-    private static Map<String, String> getPreparatedStringMap(String baseString,
+    public static Map<String, String> getPreparatedStringMap(String baseString,
                                                               List<Preparator> preparators,
                                                               Map<String, Preparator> preparedFactory) {
 
@@ -72,7 +87,7 @@ public class PhoneticCompare {
         }};
     }
 
-    private static void compare(String comparable,
+    public static void compare(String comparable,
                                 Map<String, String> baseString,
                                 Map<String, PhoneticSearch.Encoder> encoderMap,
                                 Map<String, DiffMeter> diffMeterMap,
@@ -119,8 +134,10 @@ public class PhoneticCompare {
         }
     }
 
-    private static void printTable(List<String> titles, Map<String, String> calculations, PrintWriter writer) {
-        titles.forEach(writer::println);
+    public static void printTable(List<String> titles, Map<String, String> calculations, PrintWriter writer) {
+        for (String s : titles) {
+            writer.println(s);
+        }
         for (Map.Entry<String, String> entry : calculations.entrySet()) {
             writer.println(DEVIDER +
                     wrap(entry.getKey()) + DEVIDER + entry.getValue());
@@ -138,10 +155,10 @@ public class PhoneticCompare {
      * JaroWinklerDistance
      * LevenshteinDistanceDiffMetr
      */
-    private static Map<String, DiffMeter> diffMeterFactory() {
+    public static Map<String, DiffMeter> diffMeterFactory() {
         return new HashMap<String, DiffMeter>() {{
-            put("JaroWinklerDistance", new DiffMeter.JaroWinklerDistanceDiffMetr());
-            put("LevenshteinDistance", new DiffMeter.LevenshteinDistanceDiffMetr());
+            put("JaroWinklerDistance", new JaroWinklerDistanceDiffMetr());
+            put("LevenshteinDistance", new LevenshteinDistanceDiffMetr());
         }};
     }
 
@@ -152,7 +169,7 @@ public class PhoneticCompare {
      * @param comparable строка, с которой будет сравниваться.
      * @return набор из Preparator ов
      */
-    private static Map<String, Preparator> getPreparedFactory(final String baseString, final String comparable) {
+    public static Map<String, Preparator> getPreparedFactory(final String baseString, final String comparable) {
         final int comparableLength = comparable.length();
         return new HashMap<String, Preparator>() {{
             put("Full length base String", target -> target);
@@ -168,7 +185,7 @@ public class PhoneticCompare {
      * @param comparableLength позиция, где слово могло оборваться
      * @return вернется строка до первого попадания пробела после @comparableLength, в противном случае - вся строка
      */
-    private static CharSequence getFullWordsString(CharSequence target, int comparableLength) {
+    public static CharSequence getFullWordsString(CharSequence target, int comparableLength) {
         final String SUB = " ";
         int spasePos = target.toString().indexOf(SUB, comparableLength);
         String equalsCountOfWord = target.toString();
@@ -176,5 +193,25 @@ public class PhoneticCompare {
             equalsCountOfWord = target.toString().substring(0, spasePos);
         }
         return equalsCountOfWord;
+    }
+
+    public static Map<String, PhoneticSearch.Encoder> getStringEncoderMap() {
+        return new LinkedHashMap<String, Encoder>() {{
+            put("Soundex", new TranslitEncoder(new AlgorithmEncoder(new Soundex())));
+            put("Soundex split by space", new TranslitEncoder(new SplitStringEncoder(new Soundex())));
+            put("Refined Soundex", new TranslitEncoder(new AlgorithmEncoder(new RefinedSoundex())));
+            put("NYSIIS", new TranslitEncoder(new AlgorithmEncoder(new Nysiis())));
+//            put("NYSIIS apache", new TranslitEncoder(new AlgorithmEncoder(new org.apache.commons.codec.language.Nysiis())));
+//            put("NYSIIS apache   split by space", new TranslitEncoder(new SplitStringEncoder(new org.apache.commons.codec.language.Nysiis())));
+//            put("Daitch-Mokotoff Soundex", new TranslitEncoder(new SplitStringEncoder(new PhoneticSearch.DMSoundexWrap())));
+            put("Metaphone", new TranslitEncoder(new AlgorithmEncoder(new Metaphone())));
+            put("Metaphone   split by space", new TranslitEncoder(new SplitStringEncoder(new Metaphone())));
+            put("Double Metaphone Multiple", new TranslitEncoder(new AlgorithmEncoder(new PhoneticSearch.DoubleMetaphoneWrap())));
+            put("Double Metaphone", new TranslitEncoder(new AlgorithmEncoder(new DoubleMetaphone())));
+            put("Double Metaphone  split by space", new TranslitEncoder(new SplitStringEncoder(new DoubleMetaphone())));
+            put("Russian Metaphone", new AlgorithmEncoder(new MetaphoneRussian()));
+            put("Caverphone2", new TranslitEncoder(new AlgorithmEncoder(new Caverphone2())));
+            put("Caverphone2 split by space", new TranslitEncoder(new SplitStringEncoder(new Caverphone2())));
+        }};
     }
 }
