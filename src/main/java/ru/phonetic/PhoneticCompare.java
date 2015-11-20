@@ -34,21 +34,11 @@ public class PhoneticCompare {
     public static final String DEVIDER = ",";
 
     public static void main(String[] args) throws IOException, EncoderException {
-        String comparable = "волиция также сообщения";
+        String comparable = "политика Аристотель собака Ben10";
         String baseString = "В полиции также сообщили, что собака была найдена полицейскими 555";
 
-        Map<String, String> baseStringSet = getPreparatedStringMap(baseString,
-                new ArrayList<Preparator>() {{
-                    //Все в нижний регистр
-                    add(target -> target.toString().toLowerCase());
-                    //заменить всю пунктуацияю на пробелы, избегая ситуации, когда слова разделяет знак пунктуации: "не синий,а черный"
-                    add(target -> target.toString().replaceAll("[\\p{Punct},\\s]", " "));
-                    //пока не решен вопрос с цыфрами
-                    add(target -> target.toString().replaceAll("\\d+", " "));
-                    //заменить все повторяющиеся пробелы на одинарный
-                    add(target -> target.toString().replaceAll("\\s{2,}", " "));
-                    add(target -> target.toString().trim());
-                }},
+        Map<String, String> baseStringSet = getPreparatedStringMap(
+                getPreperedString(baseString, getPreparators()),
                 getPreparedFactory(baseString, comparable));
 
         Map<String, DiffMeter> diffMeterMap = diffMeterFactory();
@@ -56,29 +46,49 @@ public class PhoneticCompare {
 
         PrintWriter writer = new PrintWriter("Stat.CSV");
 //        PrintWriter writer = new PrintWriter(System.out);
-        compare(comparable, baseStringSet, encoderMap, diffMeterMap, writer);
+        compare(getPreperedString(comparable, getPreparators()), baseStringSet, encoderMap, diffMeterMap, writer);
         writer.flush();
         writer.close();
     }
 
+    public static ArrayList<Preparator> getPreparators() {
+        return new ArrayList<Preparator>() {{
+            //Все в нижний регистр
+            add(target -> target.toString().toLowerCase());
+            //заменить всю пунктуацияю на пробелы, избегая ситуации, когда слова разделяет знак пунктуации: "не синий,а черный"
+            add(target -> target.toString().replaceAll("[\\p{Punct},\\s]", " "));
+            //пока не решен вопрос с цыфрами
+            add(target -> target.toString().replaceAll("\\d+", " "));
+            //заменить все повторяющиеся пробелы на одинарный
+            add(target -> target.toString().replaceAll("\\s{2,}", " "));
+            add(target -> target.toString().trim());
+        }};
+    }
+
+    /**
+     * Подготавливает входную строку с помощью Preparator'ов
+     *
+     * @param baseString  исходная строка
+     * @param preparators базовые преобразования ко всей строке: опустить регист, выкинуть лишнее.Те преобразования, от которых не требуется получить в дальнейшем какие-то сведения
+     * @return подготовленную строку
+     */
+    public static String getPreperedString(String baseString,
+                                           List<Preparator> preparators) {
+        for (Preparator preparator : preparators) {
+            baseString = preparator.prepare(baseString).toString();
+        }
+        return baseString;
+    }
 
     /**
      * Подготавливает входную строку с помощью Preparator'ов
      *
      * @param baseString      исходная строка
-     * @param preparators     базовые преобразования ко всей строке: опустить регист, выкинуть лишнее.Те преобразования, от которых не требуется получить в дальнейшем какие-то сведения
      * @param preparedFactory вариативные Preparator. Ключ - это тег для лога каждому препоратору. Работа каждого из них добавится отдельным пунктом
      * @return Map, который содержит ключ от preparedFactory и преобразованную строку.
      */
     public static Map<String, String> getPreparatedStringMap(String baseString,
-                                                              List<Preparator> preparators,
-                                                              Map<String, Preparator> preparedFactory) {
-
-
-        for (Preparator preparator : preparators) {
-            baseString = preparator.prepare(baseString).toString();
-        }
-
+                                                             Map<String, Preparator> preparedFactory) {
         final String preparedString = baseString;
         return new HashMap<String, String>() {{
             for (Map.Entry<String, Preparator> entry : preparedFactory.entrySet()) {
@@ -88,10 +98,10 @@ public class PhoneticCompare {
     }
 
     public static void compare(String comparable,
-                                Map<String, String> baseString,
-                                Map<String, PhoneticSearch.Encoder> encoderMap,
-                                Map<String, DiffMeter> diffMeterMap,
-                                PrintWriter writer) throws EncoderException {
+                               Map<String, String> baseString,
+                               Map<String, PhoneticSearch.Encoder> encoderMap,
+                               Map<String, DiffMeter> diffMeterMap,
+                               PrintWriter writer) throws EncoderException {
 
         for (Map.Entry<String, String> entry : baseString.entrySet()) {
             String currentBaseValue = entry.getValue();
@@ -203,7 +213,7 @@ public class PhoneticCompare {
             put("NYSIIS", new TranslitEncoder(new AlgorithmEncoder(new Nysiis())));
 //            put("NYSIIS apache", new TranslitEncoder(new AlgorithmEncoder(new org.apache.commons.codec.language.Nysiis())));
 //            put("NYSIIS apache   split by space", new TranslitEncoder(new SplitStringEncoder(new org.apache.commons.codec.language.Nysiis())));
-//            put("Daitch-Mokotoff Soundex", new TranslitEncoder(new SplitStringEncoder(new PhoneticSearch.DMSoundexWrap())));
+            put("Daitch-Mokotoff Soundex", new TranslitEncoder(new SplitStringEncoder(new PhoneticSearch.DMSoundexWrap())));
             put("Metaphone", new TranslitEncoder(new AlgorithmEncoder(new Metaphone())));
             put("Metaphone   split by space", new TranslitEncoder(new SplitStringEncoder(new Metaphone())));
             put("Double Metaphone Multiple", new TranslitEncoder(new AlgorithmEncoder(new PhoneticSearch.DoubleMetaphoneWrap())));

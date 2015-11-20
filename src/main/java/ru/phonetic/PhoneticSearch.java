@@ -140,6 +140,9 @@ public class PhoneticSearch {
                 List<String> result = new ArrayList<>();
 
                 for (String word : inputString.split("[\\p{Punct},\\s]")) {
+                    if (word == null || word.isEmpty()) {
+                        continue;
+                    }
                     result.add(Arrays.toString(super.encode(word)));
                 }
 
