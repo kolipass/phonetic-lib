@@ -182,7 +182,7 @@ public class PhoneticCompare {
     public static Map<String, Preparator> getPreparedFactory(final String baseString, final String comparable) {
         final int comparableLength = comparable.length();
         return new HashMap<String, Preparator>() {{
-            put("Full length base String", target -> target);
+//            put("Full length base String", target -> target);
             put("Equals length base String", target -> baseString.substring(0, comparableLength));
             put("Full worlds base string part", target -> getFullWordsString(target, comparableLength));
         }};

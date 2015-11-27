@@ -227,6 +227,8 @@ public class DMSoundex implements StringEncoder {
     /**
      * Returns the first Daitch Mokotoff Soundex code for the string passed in. For example: dms.sencode("chelm")
      * returns "586000"
+     * @param name input string
+     * @return first algorithm code
      */
     public String sencode(String name) {
         String[] r = soundexes(name);
