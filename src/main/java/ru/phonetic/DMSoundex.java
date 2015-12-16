@@ -36,11 +36,11 @@ import java.util.Map;
  * String r2 ;
  * String ra[] ;
  * DMSoundex dms = new DMSoundex() ;
- * <p>
+ *
  * r1 = dms.soundexes("daich") ;
  * r2 = dms.sencode("daich") ;
  * ra = dms.soundex("daich") ;
- * <p>
+ *
  * r1 will now contain: "350000 340000"
  * r2 will contain "350000"
  * ra will be an array with two entries, "350000" and "340000"

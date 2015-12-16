@@ -42,7 +42,7 @@ public class PhoneticCompare {
                 getPreparedFactory(baseString, comparable));
 
         Map<String, DiffMeter> diffMeterMap = diffMeterFactory();
-        Map<String, PhoneticSearch.Encoder> encoderMap = getStringEncoderMap();
+        Map<String, Encoder> encoderMap = getStringEncoderMap();
 
         PrintWriter writer = new PrintWriter("Stat.CSV");
 //        PrintWriter writer = new PrintWriter(System.out);
@@ -98,6 +98,20 @@ public class PhoneticCompare {
     }
 
     public static void compare(String comparable,
+                               String baseString,
+                               Map<String, PhoneticSearch.Encoder> encoderMap,
+                               Map<String, DiffMeter> diffMeterMap,
+                               PrintWriter writer) throws EncoderException {
+        compare(comparable,
+                new HashMap<String, String>() {{
+                    put(null, getPreperedString(baseString, getPreparators()));
+                }},
+                encoderMap,
+                diffMeterMap,
+                writer);
+    }
+
+    public static void compare(String comparable,
                                Map<String, String> baseString,
                                Map<String, PhoneticSearch.Encoder> encoderMap,
                                Map<String, DiffMeter> diffMeterMap,
@@ -106,7 +120,7 @@ public class PhoneticCompare {
         for (Map.Entry<String, String> entry : baseString.entrySet()) {
             String currentBaseValue = entry.getValue();
 
-            String title = wrap(entry.getKey()) + "\n";
+            String title = entry.getKey() != null ? wrap(entry.getKey()) + "\n" : null;
 
             String baseLine = "base" + DEVIDER + wrap(currentBaseValue);
             String comparableLine = "comparable" + DEVIDER + wrap(comparable);
@@ -146,7 +160,9 @@ public class PhoneticCompare {
 
     public static void printTable(List<String> titles, Map<String, String> calculations, PrintWriter writer) {
         for (String s : titles) {
-            writer.println(s);
+            if (s != null) {
+                writer.println(s);
+            }
         }
         for (Map.Entry<String, String> entry : calculations.entrySet()) {
             writer.println(DEVIDER +
@@ -205,7 +221,7 @@ public class PhoneticCompare {
         return equalsCountOfWord;
     }
 
-    public static Map<String, PhoneticSearch.Encoder> getStringEncoderMap() {
+    public static Map<String, Encoder> getStringEncoderMap() {
         return new LinkedHashMap<String, Encoder>() {{
             put("Soundex", new TranslitEncoder(new AlgorithmEncoder(new Soundex())));
             put("Soundex split by space", new TranslitEncoder(new SplitStringEncoder(new Soundex())));
